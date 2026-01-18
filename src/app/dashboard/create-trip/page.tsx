@@ -252,9 +252,9 @@ export default function CreateTrip() {
         }
       }
 
-      // 5. Redirect to dashboard (trip detail page coming soon)
+      // 5. Redirect to the new trip
       console.log('=== Trip creation successful! Trip ID:', trip.id);
-      router.push('/dashboard');
+      router.push(`/trips/${trip.id}`);
     } catch (err) {
       console.error('=== Trip creation error ===', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to create trip. Please try again.';
