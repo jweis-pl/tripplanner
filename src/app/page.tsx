@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex flex-col items-center justify-center p-8">
@@ -8,12 +10,18 @@ export default function Home() {
           Plan amazing trips together with friends and family. Coordinate everything in one place.
         </p>
         <div className="flex gap-4 justify-center">
-          <button className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-8 py-3 rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 transition-all">
+          <Link
+            href="/signup"
+            className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-8 py-3 rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 transition-all"
+          >
             Get Started
-          </button>
-          <button className="border-2 border-white/20 text-white px-8 py-3 rounded-xl font-semibold hover:bg-white/10 transition-all">
+          </Link>
+          <Link
+            href="/login"
+            className="border-2 border-white/20 text-white px-8 py-3 rounded-xl font-semibold hover:bg-white/10 transition-all"
+          >
             Sign In
-          </button>
+          </Link>
         </div>
       </div>
       <footer className="text-sm text-gray-500">
