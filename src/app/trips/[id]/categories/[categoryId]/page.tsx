@@ -58,7 +58,12 @@ export default function CategoryDetail() {
 
   // For adding new tasks inline
   const [isAddingTask, setIsAddingTask] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskData, setNewTaskData] = useState({
+    title: '',
+    description: '',
+    due_date: '',
+    status: 'not_started' as Task['status'],
+  });
 
   useEffect(() => {
     loadData();
@@ -134,14 +139,6 @@ export default function CategoryDetail() {
   };
 
   const saveFieldChange = async (task: Task, field: string) => {
-    if (!editingValues[field as keyof Task] && editingValues[field as keyof Task] !== 0) {
-      // If empty, just cancel for title (required field)
-      if (field === 'title') {
-        cancelEditing();
-        return;
-      }
-    }
-
     setSavingTaskId(task.id);
 
     const updateData: Record<string, any> = {
@@ -164,13 +161,16 @@ export default function CategoryDetail() {
   };
 
   const handleAddTask = async () => {
-    if (!newTaskTitle.trim()) return;
+    if (!newTaskData.title.trim()) return;
 
     const { error } = await supabase
       .from('tasks')
       .insert({
         category_id: categoryId,
-        title: newTaskTitle.trim(),
+        title: newTaskData.title.trim(),
+        description: newTaskData.description.trim() || null,
+        due_date: newTaskData.due_date || null,
+        status: newTaskData.status,
       });
 
     if (error) {
@@ -178,7 +178,12 @@ export default function CategoryDetail() {
       return;
     }
 
-    setNewTaskTitle('');
+    setNewTaskData({
+      title: '',
+      description: '',
+      due_date: '',
+      status: 'not_started',
+    });
     setIsAddingTask(false);
     loadData();
   };
@@ -311,38 +316,71 @@ export default function CategoryDetail() {
           <div className="space-y-3">
             {/* Add New Task Inline */}
             {isAddingTask && (
-              <div className="bg-white rounded-xl shadow-sm p-4 border-2 border-purple-200">
-                <div className="flex items-center gap-4">
+              <div className="bg-white rounded-xl shadow-sm p-4 border-2 border-purple-200 space-y-3">
+                <input
+                  autoFocus
+                  type="text"
+                  value={newTaskData.title}
+                  onChange={(e) => setNewTaskData({ ...newTaskData, title: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setNewTaskData({
+                        title: '',
+                        description: '',
+                        due_date: '',
+                        status: 'not_started',
+                      });
+                      setIsAddingTask(false);
+                    }
+                  }}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent placeholder:text-slate-400"
+                  placeholder="Task title *"
+                />
+                <textarea
+                  value={newTaskData.description}
+                  onChange={(e) => setNewTaskData({ ...newTaskData, description: e.target.value })}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent placeholder:text-slate-400 resize-none"
+                  rows={2}
+                  placeholder="Description (optional)"
+                />
+                <div className="grid grid-cols-2 gap-3">
                   <input
-                    autoFocus
-                    type="text"
-                    value={newTaskTitle}
-                    onChange={(e) => setNewTaskTitle(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleAddTask();
-                      if (e.key === 'Escape') {
-                        setNewTaskTitle('');
-                        setIsAddingTask(false);
-                      }
-                    }}
-                    className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent placeholder:text-slate-400"
-                    placeholder="What needs to be done?"
+                    type="date"
+                    value={newTaskData.due_date}
+                    onChange={(e) => setNewTaskData({ ...newTaskData, due_date: e.target.value })}
+                    className="px-4 py-2 border border-slate-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                   />
-                  <button
-                    onClick={handleAddTask}
-                    disabled={!newTaskTitle.trim()}
-                    className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg font-medium hover:from-purple-700 hover:to-purple-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  <select
+                    value={newTaskData.status}
+                    onChange={(e) => setNewTaskData({ ...newTaskData, status: e.target.value as Task['status'] })}
+                    className="px-4 py-2 border border-slate-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white"
                   >
-                    Add
-                  </button>
+                    <option value="not_started">Not Started</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                </div>
+                <div className="flex gap-2 justify-end">
                   <button
                     onClick={() => {
-                      setNewTaskTitle('');
+                      setNewTaskData({
+                        title: '',
+                        description: '',
+                        due_date: '',
+                        status: 'not_started',
+                      });
                       setIsAddingTask(false);
                     }}
                     className="px-4 py-2 border border-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-all"
                   >
                     Cancel
+                  </button>
+                  <button
+                    onClick={handleAddTask}
+                    disabled={!newTaskData.title.trim()}
+                    className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg font-medium hover:from-purple-700 hover:to-purple-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Add Task
                   </button>
                 </div>
               </div>
