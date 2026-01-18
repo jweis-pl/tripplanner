@@ -122,16 +122,18 @@ export default function CategoryDetail() {
     setCategory(categoryData);
     setTrip(tripData);
     setTasks(tasksData || []);
-    setMembers(
-      (membersData || []).map((member: { user_id: string; profiles?: { full_name?: string | null; email?: string | null }[] | { full_name?: string | null; email?: string | null } | null }) => {
-        const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
-        return {
+    const memberMap = new Map<string, TripMember>();
+    (membersData || []).forEach((member: { user_id: string; profiles?: { full_name?: string | null; email?: string | null }[] | { full_name?: string | null; email?: string | null } | null }) => {
+      const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
+      if (!memberMap.has(member.user_id)) {
+        memberMap.set(member.user_id, {
           user_id: member.user_id,
           full_name: profile?.full_name ?? null,
           email: profile?.email ?? null,
-        };
-      })
-    );
+        });
+      }
+    });
+    setMembers(Array.from(memberMap.values()));
     setLoading(false);
   };
 
