@@ -20,6 +20,7 @@ interface Category {
   name: string;
   icon: string;
   trip_id: string;
+  task_count?: number;
 }
 
 type TabType = 'planning' | 'itinerary' | 'settings';
@@ -82,21 +83,39 @@ export default function TripDetail() {
       setMemberCount(count || 1);
 
       // Fetch categories
-      console.log('Fetching categories for trip:', tripId);
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('*')
         .eq('trip_id', tripId)
         .order('created_at', { ascending: true });
 
-      console.log('Categories result:', { categoriesData, categoriesError });
-
       if (categoriesError) {
         console.error('Error fetching categories:', categoriesError);
       }
 
+      // Fetch task counts for each category
+      let categoriesWithCounts: Category[] = categoriesData || [];
+      if (categoriesData && categoriesData.length > 0) {
+        const { data: taskCounts } = await supabase
+          .from('tasks')
+          .select('category_id')
+          .in('category_id', categoriesData.map(c => c.id));
+
+        if (taskCounts) {
+          const countMap = taskCounts.reduce((acc, task) => {
+            acc[task.category_id] = (acc[task.category_id] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>);
+
+          categoriesWithCounts = categoriesData.map(cat => ({
+            ...cat,
+            task_count: countMap[cat.id] || 0,
+          }));
+        }
+      }
+
       setTrip(tripData);
-      setCategories(categoriesData || []);
+      setCategories(categoriesWithCounts);
       setLoading(false);
     };
 
@@ -252,7 +271,9 @@ export default function TripDetail() {
                       <h3 className="text-lg font-semibold text-slate-900 mb-1 group-hover:text-purple-600 transition-colors">
                         {category.name}
                       </h3>
-                      <p className="text-sm text-slate-400">0 items</p>
+                      <p className="text-sm text-slate-400">
+                        {category.task_count || 0} {category.task_count === 1 ? 'item' : 'items'}
+                      </p>
                     </Link>
                   ))}
                 </div>
