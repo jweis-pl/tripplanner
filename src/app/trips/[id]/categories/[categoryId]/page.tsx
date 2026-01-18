@@ -537,29 +537,22 @@ export default function CategoryDetail() {
                           )}
 
                           {/* Assignee */}
-                          <div className="flex items-center gap-2">
-                            {task.assignee_id && (
-                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-purple-50 text-purple-700 border border-purple-100">
-                                {getMemberLabel(assignee)}
-                              </span>
-                            )}
-                            <div className="relative">
-                              <select
-                                value={task.assignee_id ?? 'unassigned'}
-                                onChange={(e) => handleAssigneeChange(task, e.target.value)}
-                                className="appearance-none px-3 py-1 text-xs border border-slate-200 rounded-full bg-slate-50 text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent hover:border-purple-200 transition-all pr-8"
-                              >
-                                <option value="unassigned">Unassigned</option>
-                                {members.map((member) => (
-                                  <option key={member.user_id} value={member.user_id}>
-                                    {getMemberLabel(member)}
-                                  </option>
-                                ))}
-                              </select>
-                              <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400">
-                                ▾
-                              </span>
-                            </div>
+                          <div className="relative">
+                            <select
+                              value={task.assignee_id ?? 'unassigned'}
+                              onChange={(e) => handleAssigneeChange(task, e.target.value)}
+                              className={`appearance-none px-3 py-1 text-xs border rounded-full focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all pr-8 ${task.assignee_id ? 'bg-purple-50 text-purple-700 border-purple-100 hover:border-purple-200' : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-purple-200'}`}
+                            >
+                              <option value="unassigned">Unassigned</option>
+                              {members.map((member) => (
+                                <option key={member.user_id} value={member.user_id}>
+                                  {getMemberLabel(member)}
+                                </option>
+                              ))}
+                            </select>
+                            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400">
+                              ▾
+                            </span>
                           </div>
 
                           {/* Due Date - Click to edit */}
