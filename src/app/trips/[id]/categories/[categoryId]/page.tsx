@@ -30,8 +30,8 @@ interface Task {
 
 interface TripMember {
   user_id: string;
-  user_email?: string;
-  user_name?: string;
+  email?: string | null;
+  full_name?: string | null;
 }
 
 export default function CategoryDetail() {
@@ -113,16 +113,25 @@ export default function CategoryDetail() {
       console.error('Error fetching tasks:', tasksError);
     }
 
-    // Fetch trip members for assignee dropdown
+    // Fetch trip members for assignee dropdown (profiles join for display name)
     const { data: membersData } = await supabase
       .from('trip_members')
-      .select('user_id')
+      .select('user_id, profiles(full_name, email)')
       .eq('trip_id', tripId);
 
     setCategory(categoryData);
     setTrip(tripData);
     setTasks(tasksData || []);
-    setMembers(membersData || []);
+    setMembers(
+      (membersData || []).map((member: { user_id: string; profiles?: { full_name?: string | null; email?: string | null }[] | { full_name?: string | null; email?: string | null } | null }) => {
+        const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
+        return {
+          user_id: member.user_id,
+          full_name: profile?.full_name ?? null,
+          email: profile?.email ?? null,
+        };
+      })
+    );
     setLoading(false);
   };
 
@@ -217,6 +226,21 @@ export default function CategoryDetail() {
     setTasks(tasks.map(t => t.id === task.id ? { ...t, status: newStatus } : t));
   };
 
+  const handleAssigneeChange = async (task: Task, assigneeId: string) => {
+    const nextAssignee = assigneeId === 'unassigned' ? null : assigneeId;
+    const { error } = await supabase
+      .from('tasks')
+      .update({ assignee_id: nextAssignee })
+      .eq('id', task.id);
+
+    if (error) {
+      console.error('Error updating assignee:', error);
+      return;
+    }
+
+    setTasks(tasks.map(t => t.id === task.id ? { ...t, assignee_id: nextAssignee } : t));
+  };
+
   const getStatusBadge = (status: Task['status']) => {
     switch (status) {
       case 'completed':
@@ -226,6 +250,13 @@ export default function CategoryDetail() {
       default:
         return <span className="px-2 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-600">Not Started</span>;
     }
+  };
+
+  const getMemberLabel = (member?: TripMember) => {
+    if (!member) return 'Unassigned';
+    if (member.full_name?.trim()) return member.full_name;
+    if (member.email?.trim()) return member.email;
+    return 'Member';
   };
 
   const formatDate = (dateString: string) => {
@@ -387,12 +418,14 @@ export default function CategoryDetail() {
             )}
 
             {/* Task List */}
-            {tasks.map((task) => (
-              <div
-                key={task.id}
-                className={`bg-white rounded-xl shadow-sm p-4 border border-slate-200 hover:shadow-md transition-all ${task.status === 'completed' ? 'opacity-75' : ''
-                  }`}
-              >
+            {tasks.map((task) => {
+              const assignee = members.find(member => member.user_id === task.assignee_id);
+              return (
+                <div
+                  key={task.id}
+                  className={`bg-white rounded-xl shadow-sm p-4 border border-slate-200 hover:shadow-md transition-all ${task.status === 'completed' ? 'opacity-75' : ''
+                    }`}
+                >
                 <div className="flex items-start gap-4">
                   {/* Checkbox for completion */}
                   <button
@@ -400,8 +433,8 @@ export default function CategoryDetail() {
                       toggleStatus(task, task.status === 'completed' ? 'not_started' : 'completed')
                     }
                     className={`mt-1 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 ${task.status === 'completed'
-                        ? 'bg-green-500 border-green-500 text-white'
-                        : 'border-slate-300 hover:border-purple-500'
+                      ? 'bg-green-500 border-green-500 text-white'
+                      : 'border-slate-300 hover:border-purple-500'
                       }`}
                   >
                     {task.status === 'completed' && (
@@ -472,7 +505,7 @@ export default function CategoryDetail() {
                           )}
                         </div>
 
-                        {/* Status Dropdown and Due Date */}
+                        {/* Status, Assignee, and Due Date */}
                         <div className="flex flex-wrap items-center gap-3 mt-2">
                           {/* Status dropdown - inline */}
                           {editingTaskId === task.id && editingField === 'status' ? (
@@ -500,6 +533,32 @@ export default function CategoryDetail() {
                               {getStatusBadge(task.status)}
                             </button>
                           )}
+
+                          {/* Assignee */}
+                          <div className="flex items-center gap-2">
+                            {task.assignee_id && (
+                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-purple-50 text-purple-700 border border-purple-100">
+                                {getMemberLabel(assignee)}
+                              </span>
+                            )}
+                            <div className="relative">
+                              <select
+                                value={task.assignee_id ?? 'unassigned'}
+                                onChange={(e) => handleAssigneeChange(task, e.target.value)}
+                                className="appearance-none px-3 py-1 text-xs border border-slate-200 rounded-full bg-slate-50 text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent hover:border-purple-200 transition-all pr-8"
+                              >
+                                <option value="unassigned">Unassigned</option>
+                                {members.map((member) => (
+                                  <option key={member.user_id} value={member.user_id}>
+                                    {getMemberLabel(member)}
+                                  </option>
+                                ))}
+                              </select>
+                              <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400">
+                                ▾
+                              </span>
+                            </div>
+                          </div>
 
                           {/* Due Date - Click to edit */}
                           {editingTaskId === task.id && editingField === 'due_date' ? (
@@ -572,7 +631,8 @@ export default function CategoryDetail() {
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
