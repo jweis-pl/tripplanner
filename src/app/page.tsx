@@ -1,7 +1,7 @@
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-8">
-      <div className="text-center">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex flex-col items-center justify-center p-8">
+      <div className="text-center flex-1 flex flex-col justify-center">
         <div className="text-6xl mb-8">✈️</div>
         <h1 className="text-5xl font-bold text-white mb-4">TripPlanner</h1>
         <p className="text-xl text-slate-300 mb-8 max-w-md">
@@ -16,6 +16,9 @@ export default function Home() {
           </button>
         </div>
       </div>
+      <footer className="text-sm text-gray-500">
+        © 2025 TripPlanner
+      </footer>
     </div>
   );
 }
